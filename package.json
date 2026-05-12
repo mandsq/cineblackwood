@@ -1,9 +1,0 @@
-{
-  "name": "cinevault",
-  "version": "1.0.0",
-  "description": "Site de streaming de vídeos",
-  "main": "server.js",
-  "scripts": {
-    "start": "node server.js"
-  }
-}
