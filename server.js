@@ -13,16 +13,26 @@ const UPLOAD_DIR = path.join(__dirname, 'uploads');
 
 if (!fs.existsSync(UPLOAD_DIR)) fs.mkdirSync(UPLOAD_DIR);
 
+// ── Sessões de cinema ao vivo ──────────────────────────────────────────────
+// { code: { filename, startedAt } }
+const sessions = {};
+
+function randomCode() {
+  return Math.random().toString(36).slice(2, 8).toUpperCase();
+}
+
+// ── Upload ─────────────────────────────────────────────────────────────────
 const storage = multer.diskStorage({
   destination: (req, file, cb) => cb(null, UPLOAD_DIR),
   filename: (req, file, cb) => {
     const safe = Buffer.from(file.originalname, 'latin1').toString('utf8')
-      .replace(/[^a-zA-Z0-9.\-_áéíóúãõâêîôûàèìòùçÁÉÍÓÚÃÕÂÊÎÔÛÀÈÌÒÙÇ ]/g, '_');
+      .replace(/[^a-zA-Z0-9.\-_]/g, '_');
     cb(null, Date.now() + '___' + safe);
   }
 });
 const upload = multer({ storage, limits: { fileSize: 50 * 1024 * 1024 * 1024 } });
 
+// ── Rotas principais ───────────────────────────────────────────────────────
 app.get('/', (req, res) => res.sendFile(path.join(__dirname, 'index.html')));
 
 app.post('/upload', upload.single('video'), (req, res) => {
@@ -41,23 +51,112 @@ app.get('/videos', (req, res) => {
     .filter(f => /\.(mp4|mkv|avi|mov|webm|m4v|wmv|flv)$/i.test(f));
   const list = files.map(f => {
     const stat = fs.statSync(path.join(UPLOAD_DIR, f));
-    const rawName = f.replace(/^\d+___/, '');
-    const name = rawName.replace(/\.[^/.]+$/, '');
+    const name = f.replace(/^\d+___/, '').replace(/\.[^/.]+$/, '');
     return { id: f, name, size: stat.size, url: '/video/' + f, addedAt: stat.birthtimeMs };
   }).sort((a, b) => b.addedAt - a.addedAt);
   res.json(list);
 });
 
+// ── Stream de vídeo com Range ──────────────────────────────────────────────
 app.get('/video/:filename', (req, res) => {
   const filePath = path.join(UPLOAD_DIR, req.params.filename);
   if (!fs.existsSync(filePath)) return res.status(404).send('Não encontrado');
+  serveVideo(filePath, req, res);
+});
+
+// ── CRIAR sessão de cinema (transmissão sincronizada) ─────────────────────
+// POST /session/create  { filename }
+app.use(express.json());
+app.post('/session/create', (req, res) => {
+  const { filename } = req.body;
+  if (!filename) return res.status(400).json({ error: 'filename obrigatório' });
+  const filePath = path.join(UPLOAD_DIR, filename);
+  if (!fs.existsSync(filePath)) return res.status(404).json({ error: 'Arquivo não encontrado' });
+
+  const code = randomCode();
+  sessions[code] = { filename, startedAt: Date.now() };
+  res.json({ code, watchUrl: `/watch/${code}` });
+});
+
+// ── Página de cinema (para o script do GTA RP apontar) ────────────────────
+app.get('/watch/:code', (req, res) => {
+  const session = sessions[req.params.code];
+  if (!session) return res.status(404).send('Sessão não encontrada ou expirada.');
+
+  // Calcula quantos segundos já se passaram desde que a sessão começou
+  const elapsed = (Date.now() - session.startedAt) / 1000;
+  const filePath = path.join(UPLOAD_DIR, session.filename);
+  const stat = fs.statSync(filePath);
+
+  // Página HTML que abre o vídeo já no tempo certo
+  res.send(`<!DOCTYPE html>
+<html>
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width,initial-scale=1">
+  <title>CINE BLACKWOOD</title>
+  <style>
+    * { margin:0; padding:0; box-sizing:border-box; }
+    body { background:#000; display:flex; align-items:center; justify-content:center; height:100vh; }
+    video { width:100vw; height:100vh; object-fit:contain; }
+  </style>
+</head>
+<body>
+  <video id="v" src="/stream/${req.params.code}" preload="auto"></video>
+  <script>
+    const v = document.getElementById('v');
+    const elapsed = ${elapsed.toFixed(2)};
+    v.addEventListener('loadedmetadata', () => {
+      v.currentTime = Math.min(elapsed, v.duration - 0.5);
+      v.play();
+    });
+    // Resync a cada 10s para corrigir desvios
+    setInterval(() => {
+      const expected = (Date.now() - ${session.startedAt}) / 1000;
+      if (Math.abs(v.currentTime - expected) > 2) {
+        v.currentTime = Math.min(expected, v.duration - 0.5);
+      }
+    }, 10000);
+  </script>
+</body>
+</html>`);
+});
+
+// ── Stream do vídeo da sessão ──────────────────────────────────────────────
+app.get('/stream/:code', (req, res) => {
+  const session = sessions[req.params.code];
+  if (!session) return res.status(404).send('Sessão não encontrada');
+  const filePath = path.join(UPLOAD_DIR, session.filename);
+  if (!fs.existsSync(filePath)) return res.status(404).send('Arquivo não encontrado');
+  serveVideo(filePath, req, res);
+});
+
+// ── Info da sessão (para o frontend saber o tempo atual) ──────────────────
+app.get('/session/:code', (req, res) => {
+  const session = sessions[req.params.code];
+  if (!session) return res.status(404).json({ error: 'Não encontrada' });
+  const elapsed = (Date.now() - session.startedAt) / 1000;
+  res.json({ ...session, elapsed });
+});
+
+// ── Deletar vídeo ──────────────────────────────────────────────────────────
+app.delete('/video/:filename', (req, res) => {
+  const filePath = path.join(UPLOAD_DIR, req.params.filename);
+  if (fs.existsSync(filePath)) fs.unlinkSync(filePath);
+  res.json({ ok: true });
+});
+
+// ── Helper: serve arquivo com suporte a Range ─────────────────────────────
+function serveVideo(filePath, req, res) {
   const stat = fs.statSync(filePath);
   const fileSize = stat.size;
-  const range = req.headers.range;
-  const ext = path.extname(req.params.filename).toLowerCase();
-  const mimeMap = { '.mp4':'video/mp4', '.mkv':'video/x-matroska', '.avi':'video/x-msvideo',
-    '.mov':'video/quicktime', '.webm':'video/webm', '.m4v':'video/mp4', '.wmv':'video/x-ms-wmv' };
+  const ext = path.extname(filePath).toLowerCase();
+  const mimeMap = {
+    '.mp4': 'video/mp4', '.mkv': 'video/x-matroska', '.avi': 'video/x-msvideo',
+    '.mov': 'video/quicktime', '.webm': 'video/webm', '.m4v': 'video/mp4', '.wmv': 'video/x-ms-wmv'
+  };
   const mime = mimeMap[ext] || 'video/mp4';
+  const range = req.headers.range;
   if (range) {
     const [s, e] = range.replace(/bytes=/, '').split('-');
     const start = parseInt(s, 10);
@@ -73,12 +172,6 @@ app.get('/video/:filename', (req, res) => {
     res.writeHead(200, { 'Content-Length': fileSize, 'Content-Type': mime, 'Accept-Ranges': 'bytes' });
     fs.createReadStream(filePath).pipe(res);
   }
-});
+}
 
-app.delete('/video/:filename', (req, res) => {
-  const filePath = path.join(UPLOAD_DIR, req.params.filename);
-  if (fs.existsSync(filePath)) fs.unlinkSync(filePath);
-  res.json({ ok: true });
-});
-
-app.listen(PORT, () => console.log('CineVault porta ' + PORT));
+app.listen(PORT, () => console.log('CineBlackwood porta ' + PORT));

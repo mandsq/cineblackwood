@@ -403,7 +403,72 @@
     .sp option { background: #0f0f0f; }
     .gap { flex: 1; }
 
-    /* fullscreen nativo no video */
+    .cinema-btn {
+      display: block;
+      width: calc(100% - 1.8rem);
+      margin: 0 0.9rem 0.8rem;
+      background: none;
+      border: 1px solid var(--red);
+      color: var(--red);
+      font-family: 'Barlow Condensed', sans-serif;
+      font-size: 0.72rem;
+      letter-spacing: 0.18em;
+      text-transform: uppercase;
+      padding: 6px 0;
+      cursor: pointer;
+      transition: background 0.2s, color 0.2s;
+    }
+    .cinema-btn:hover { background: var(--red); color: #fff; }
+
+    /* modal de sessão */
+    .session-modal {
+      display: none; position: fixed; inset: 0;
+      background: rgba(0,0,0,0.96); z-index: 2000;
+      align-items: center; justify-content: center;
+    }
+    .session-modal.open { display: flex; }
+    .session-box {
+      background: var(--dark);
+      border: 1px solid var(--border);
+      padding: 2rem 2.5rem;
+      max-width: 420px; width: 90%;
+      text-align: center;
+    }
+    .session-box h3 {
+      font-family: 'Bebas Neue', sans-serif;
+      font-size: 1.4rem; letter-spacing: 0.1em;
+      color: var(--text); margin-bottom: 0.5rem;
+    }
+    .session-box p { font-size: 0.82rem; color: var(--muted); margin-bottom: 1.5rem; }
+    .session-code {
+      font-family: 'Bebas Neue', sans-serif;
+      font-size: 2.5rem; letter-spacing: 0.3em;
+      color: var(--gold); margin-bottom: 0.5rem;
+    }
+    .session-url {
+      font-size: 0.75rem; color: var(--muted);
+      word-break: break-all; margin-bottom: 1.5rem;
+      background: #0a0a0a; padding: 0.6rem 1rem;
+      border: 1px solid var(--border);
+    }
+    .session-url span { color: var(--text); }
+    .copy-btn {
+      background: var(--red); border: none; color: #fff;
+      font-family: 'Barlow Condensed', sans-serif;
+      font-size: 0.8rem; letter-spacing: 0.15em;
+      text-transform: uppercase;
+      padding: 8px 24px; cursor: pointer; margin-right: 0.5rem;
+      transition: opacity 0.2s;
+    }
+    .copy-btn:hover { opacity: 0.85; }
+    .sess-close {
+      background: none; border: 1px solid #333; color: var(--muted);
+      font-family: 'Barlow Condensed', sans-serif;
+      font-size: 0.8rem; letter-spacing: 0.1em;
+      padding: 8px 20px; cursor: pointer;
+      transition: border-color 0.2s;
+    }
+    .sess-close:hover { border-color: var(--muted); }
     #mainVideo:fullscreen,
     #mainVideo:-webkit-full-screen,
     #mainVideo:-moz-full-screen {
@@ -502,6 +567,18 @@
   </div>
 </div>
 
+<!-- SESSION MODAL -->
+<div class="session-modal" id="sessionModal">
+  <div class="session-box">
+    <h3>🎬 Sessão de Cinema</h3>
+    <p>Cole esta URL no script do cinema no GTA RP.<br>Todo mundo que abrir o link vai ver o mesmo momento do vídeo.</p>
+    <div class="session-code" id="sessCode">——</div>
+    <div class="session-url">URL: <span id="sessUrl">—</span></div>
+    <button class="copy-btn" id="copyBtn">Copiar URL</button>
+    <button class="sess-close" id="sessClose">Fechar</button>
+  </div>
+</div>
+
 <script>
   const $ = id => document.getElementById(id);
   const fmtSize = b => b>1073741824?(b/1073741824).toFixed(1)+' GB':b>1048576?(b/1048576).toFixed(1)+' MB':(b/1024).toFixed(0)+' KB';
@@ -529,6 +606,7 @@
           <div class="video-title">${v.name}</div>
           <div class="video-meta">${fmtSize(v.size)}</div>
         </div>
+        <button class="cinema-btn">▶ Transmitir no Cinema</button>
         <button class="delete-btn" title="Remover">✕</button>`;
       c.addEventListener('click', e => { if(!e.target.classList.contains('delete-btn')) openPlayer(v); });
       c.querySelector('.delete-btn').addEventListener('click', async e => {
@@ -536,6 +614,21 @@
         if(!confirm('Remover este vídeo?')) return;
         await fetch('/video/'+v.id,{method:'DELETE'});
         loadLib();
+      });
+      // Botão de cinema
+      c.querySelector('.cinema-btn').addEventListener('click', async e => {
+        e.stopPropagation();
+        const r = await fetch('/session/create', {
+          method: 'POST',
+          headers: {'Content-Type':'application/json'},
+          body: JSON.stringify({ filename: v.id })
+        });
+        const data = await r.json();
+        const fullUrl = location.origin + data.watchUrl;
+        $('sessCode').textContent = data.code;
+        $('sessUrl').textContent = fullUrl;
+        $('copyBtn').onclick = () => { navigator.clipboard.writeText(fullUrl); $('copyBtn').textContent = 'Copiado!'; setTimeout(()=>$('copyBtn').textContent='Copiar URL',2000); };
+        $('sessionModal').classList.add('open');
       });
       $('videoGrid').appendChild(c);
     });
@@ -626,6 +719,9 @@
     document.addEventListener(ev,()=>{ const isFs=document.fullscreenElement||document.webkitFullscreenElement||document.mozFullScreenElement; $('fsBtn').textContent=isFs?'⊡':'⛶'; });
   });
 
+  $('sessClose').addEventListener('click', () => $('sessionModal').classList.remove('open'));
+
+  // ── Init ──────────────────────────────────────────────
   loadLib();
 </script>
 </body>
