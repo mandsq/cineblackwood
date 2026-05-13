@@ -98,50 +98,52 @@ app.get('/watch/:code', (req, res) => {
     * { margin:0; padding:0; box-sizing:border-box; }
     html, body { background:#000; width:100%; height:100%; overflow:hidden; }
     video { width:100vw; height:100vh; object-fit:contain; display:block; }
-    #msg { position:fixed; inset:0; background:#000; color:#888; display:flex; align-items:center; justify-content:center; font-family:sans-serif; font-size:1rem; letter-spacing:0.1em; }
+    #overlay { position:fixed; inset:0; background:#000; display:flex; flex-direction:column; align-items:center; justify-content:center; gap:1.5rem; cursor:pointer; }
+    #overlay p { color:#555; font-family:sans-serif; font-size:0.8rem; letter-spacing:0.15em; }
+    #playbtn { background:#c0392b; border:none; color:#fff; padding:16px 48px; font-size:1.1rem; cursor:pointer; letter-spacing:0.15em; font-family:sans-serif; }
   </style>
 </head>
 <body>
-  <div id="msg">CARREGANDO...</div>
   <video id="v" preload="auto" playsinline></video>
+  <div id="overlay">
+    <button id="playbtn">▶ ASSISTIR</button>
+    <p>CINE BLACKWOOD</p>
+  </div>
   <script>
-    const startedAt = ${session.startedAt};
     const v = document.getElementById('v');
-    const msg = document.getElementById('msg');
+    const overlay = document.getElementById('overlay');
+    const startedAt = ${session.startedAt};
 
     function getExpected() {
       return (Date.now() - startedAt) / 1000;
     }
 
-    function tryPlay() {
+    function startVideo() {
+      overlay.style.display = 'none';
       const expected = getExpected();
-      if (v.duration && expected < v.duration) {
-        v.currentTime = expected;
+      // Tenta setar o tempo — se o vídeo ainda não carregou, seta quando puder
+      if (v.readyState >= 1 && v.duration) {
+        v.currentTime = Math.min(expected, v.duration - 0.5);
+      } else {
+        v.addEventListener('loadedmetadata', () => {
+          v.currentTime = Math.min(getExpected(), v.duration - 0.5);
+        }, { once: true });
       }
-      v.play().then(() => {
-        msg.style.display = 'none';
-      }).catch(() => {
-        // autoplay bloqueado — mostra botão
-        msg.innerHTML = '<button onclick="forcePlay()" style="background:#c0392b;border:none;color:#fff;padding:14px 32px;font-size:1rem;cursor:pointer;letter-spacing:0.1em;">▶ ASSISTIR</button>';
-      });
+      v.play().catch(() => {});
     }
 
-    function forcePlay() {
-      v.currentTime = getExpected();
-      v.play();
-      msg.style.display = 'none';
-    }
-
-    v.addEventListener('canplay', tryPlay, { once: true });
+    document.getElementById('playbtn').addEventListener('click', startVideo);
+    overlay.addEventListener('click', startVideo);
 
     // Resync a cada 8s
     setInterval(() => {
-      if (v.paused || v.ended) return;
-      const diff = Math.abs(v.currentTime - getExpected());
-      if (diff > 3) v.currentTime = getExpected();
+      if (v.paused || v.ended || !v.duration) return;
+      const diff = v.currentTime - getExpected();
+      if (Math.abs(diff) > 3) {
+        v.currentTime = Math.min(getExpected(), v.duration - 0.5);
+      }
     }, 8000);
 
-    // Começa a carregar
     v.src = '/stream/${req.params.code}';
     v.load();
   </script>
