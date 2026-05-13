@@ -403,34 +403,15 @@
     .sp option { background: #0f0f0f; }
     .gap { flex: 1; }
 
-    /* fullscreen no modal */
-    #modal:fullscreen,
-    #modal:-webkit-full-screen,
-    #modal:-moz-full-screen {
-      display: flex !important;
-      align-items: center;
-      justify-content: center;
-      background: #000 !important;
-      padding: 0 !important;
-    }
-    #modal:fullscreen .player-wrap,
-    #modal:-webkit-full-screen .player-wrap,
-    #modal:-moz-full-screen .player-wrap {
-      width: 100vw !important; max-width: 100vw !important;
+    /* fullscreen nativo no video */
+    #mainVideo:fullscreen,
+    #mainVideo:-webkit-full-screen,
+    #mainVideo:-moz-full-screen {
+      width: 100vw !important;
       height: 100vh !important;
-      display: flex !important; flex-direction: column !important;
-      border: none !important; box-shadow: none !important;
-    }
-    #modal:fullscreen #mainVideo,
-    #modal:-webkit-full-screen #mainVideo,
-    #modal:-moz-full-screen #mainVideo {
-      flex: 1 !important; max-height: none !important;
-      height: 0 !important; width: 100% !important;
       object-fit: contain !important;
+      background: #000 !important;
     }
-    #modal:fullscreen .controls,
-    #modal:-webkit-full-screen .controls,
-    #modal:-moz-full-screen .controls { flex-shrink: 0 !important; }
 
     @media (max-width: 640px) {
       header, .hero, .divider, .library { padding-left: 1rem; padding-right: 1rem; }
@@ -631,11 +612,10 @@
   $('speedSel').addEventListener('change',()=>vid.playbackRate=parseFloat($('speedSel').value));
 
   function toggleFs(){
-    const el = $('modal');
     const isFs = document.fullscreenElement || document.webkitFullscreenElement || document.mozFullScreenElement;
     if(!isFs){
-      const r = el.requestFullscreen || el.webkitRequestFullscreen || el.mozRequestFullScreen;
-      if(r) r.call(el);
+      const r = vid.requestFullscreen || vid.webkitRequestFullscreen || vid.mozRequestFullScreen || vid.msRequestFullscreen;
+      if(r) r.call(vid);
     } else {
       const x = document.exitFullscreen || document.webkitExitFullscreen || document.mozCancelFullScreen;
       if(x) x.call(document);
