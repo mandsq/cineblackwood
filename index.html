@@ -624,10 +624,20 @@
           body: JSON.stringify({ filename: v.id })
         });
         const data = await r.json();
-        const fullUrl = location.origin + data.watchUrl;
+        const watchUrl = location.origin + data.watchUrl;
+        const controlUrl = location.origin + data.controlUrl;
         $('sessCode').textContent = data.code;
-        $('sessUrl').textContent = fullUrl;
-        $('copyBtn').onclick = () => { navigator.clipboard.writeText(fullUrl); $('copyBtn').textContent = 'Copiado!'; setTimeout(()=>$('copyBtn').textContent='Copiar URL',2000); };
+        $('sessUrl').innerHTML = `
+          <div style="margin-bottom:0.6rem">
+            <div style="color:#666;font-size:0.7rem;letter-spacing:0.15em;margin-bottom:4px">URL DOS ESPECTADORES (cole no script do GTA RP):</div>
+            <div style="color:#e8e4dc;word-break:break-all">${watchUrl}</div>
+          </div>
+          <div>
+            <div style="color:#666;font-size:0.7rem;letter-spacing:0.15em;margin-bottom:4px">SEU CONTROLE (abra você mesmo para dar play/pause):</div>
+            <div style="color:#b8965a;word-break:break-all">${controlUrl}</div>
+          </div>`;
+        $('copyBtn').onclick = () => { navigator.clipboard.writeText(watchUrl); $('copyBtn').textContent = 'Copiado!'; setTimeout(()=>$('copyBtn').textContent='Copiar URL Espectadores',2000); };
+        $('copyBtn').textContent = 'Copiar URL Espectadores';
         $('sessionModal').classList.add('open');
       });
       $('videoGrid').appendChild(c);
