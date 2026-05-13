@@ -3,268 +3,635 @@
 <head>
   <meta charset="UTF-8" />
   <meta name="viewport" content="width=device-width, initial-scale=1.0" />
-  <title>CineVault — Sua Biblioteca de Vídeos</title>
-  <link rel="preconnect" href="https://fonts.googleapis.com" />
-  <link href="https://fonts.googleapis.com/css2?family=Bebas+Neue&family=DM+Sans:wght@300;400;500;600&display=swap" rel="stylesheet" />
+  <title>CINE BLACKWOOD</title>
+  <link href="https://fonts.googleapis.com/css2?family=Bebas+Neue&family=Barlow+Condensed:wght@300;400;600;700&family=Barlow:wght@300;400&display=swap" rel="stylesheet" />
   <style>
     :root {
-      --bg: #0a0a0f; --surface: #13131a; --card: #1a1a24; --border: #2a2a38;
-      --accent: #e8c84a; --accent2: #ff6b35; --text: #f0f0f8; --muted: #888899;
-      --overlay: rgba(10,10,15,0.92);
+      --black:   #080808;
+      --dark:    #0f0f0f;
+      --card:    #141414;
+      --border:  #222;
+      --red:     #c0392b;
+      --red2:    #e74c3c;
+      --gold:    #b8965a;
+      --gold2:   #d4a96a;
+      --text:    #e8e4dc;
+      --muted:   #666;
+      --overlay: rgba(8,8,8,0.96);
     }
-    * { margin: 0; padding: 0; box-sizing: border-box; }
-    body { background: var(--bg); color: var(--text); font-family: 'DM Sans', sans-serif; min-height: 100vh; overflow-x: hidden; }
-    header { position: sticky; top: 0; z-index: 100; background: rgba(10,10,15,0.85); backdrop-filter: blur(20px); border-bottom: 1px solid var(--border); padding: 0 2rem; height: 64px; display: flex; align-items: center; justify-content: space-between; }
-    .logo { font-family: 'Bebas Neue', sans-serif; font-size: 1.8rem; letter-spacing: 2px; color: var(--accent); text-shadow: 0 0 30px rgba(232,200,74,0.4); }
-    .logo span { color: var(--accent2); }
-    .video-count { font-size: 0.8rem; color: var(--muted); background: var(--surface); padding: 4px 12px; border-radius: 20px; border: 1px solid var(--border); }
-    .upload-section { padding: 2rem 2rem 1rem; }
-    .upload-zone { border: 2px dashed var(--border); border-radius: 16px; padding: 2.5rem; text-align: center; cursor: pointer; transition: all 0.3s ease; background: var(--surface); position: relative; overflow: hidden; }
-    .upload-zone::before { content: ''; position: absolute; inset: 0; background: radial-gradient(ellipse at center, rgba(232,200,74,0.04) 0%, transparent 70%); pointer-events: none; }
-    .upload-zone:hover, .upload-zone.drag-over { border-color: var(--accent); background: rgba(232,200,74,0.05); transform: scale(1.005); }
-    .upload-zone h2 { font-family: 'Bebas Neue', sans-serif; font-size: 1.4rem; letter-spacing: 1px; margin-bottom: 0.3rem; }
-    .upload-zone p { color: var(--muted); font-size: 0.875rem; }
-    .upload-zone p strong { color: var(--accent); }
+
+    *, *::before, *::after { margin:0; padding:0; box-sizing:border-box; }
+
+    body {
+      background: var(--black);
+      color: var(--text);
+      font-family: 'Barlow', sans-serif;
+      min-height: 100vh;
+      overflow-x: hidden;
+    }
+
+    /* grain overlay */
+    body::before {
+      content: '';
+      position: fixed;
+      inset: 0;
+      background-image: url("data:image/svg+xml,%3Csvg viewBox='0 0 256 256' xmlns='http://www.w3.org/2000/svg'%3E%3Cfilter id='noise'%3E%3CfeTurbulence type='fractalNoise' baseFrequency='0.9' numOctaves='4' stitchTiles='stitch'/%3E%3C/filter%3E%3Crect width='100%25' height='100%25' filter='url(%23noise)' opacity='0.04'/%3E%3C/svg%3E");
+      pointer-events: none;
+      z-index: 9999;
+      opacity: 0.35;
+    }
+
+    /* ─── HEADER ─── */
+    header {
+      position: sticky; top: 0; z-index: 200;
+      background: rgba(8,8,8,0.9);
+      backdrop-filter: blur(12px);
+      border-bottom: 1px solid var(--border);
+      height: 68px;
+      display: flex; align-items: center; justify-content: space-between;
+      padding: 0 2.5rem;
+    }
+
+    .logo {
+      display: flex; flex-direction: column; line-height: 1;
+      gap: 1px;
+    }
+    .logo-top {
+      font-family: 'Barlow Condensed', sans-serif;
+      font-weight: 300;
+      font-size: 0.65rem;
+      letter-spacing: 0.45em;
+      color: var(--red);
+      text-transform: uppercase;
+    }
+    .logo-main {
+      font-family: 'Bebas Neue', sans-serif;
+      font-size: 1.9rem;
+      letter-spacing: 0.12em;
+      color: var(--text);
+      line-height: 1;
+    }
+    .logo-main span { color: var(--gold); }
+
+    .header-right { display: flex; align-items: center; gap: 1.2rem; }
+    .pill {
+      font-family: 'Barlow Condensed', sans-serif;
+      font-size: 0.72rem;
+      letter-spacing: 0.15em;
+      color: var(--muted);
+      background: var(--dark);
+      border: 1px solid var(--border);
+      padding: 5px 14px;
+      text-transform: uppercase;
+    }
+    .pill span { color: var(--gold); }
+
+    /* ─── HERO UPLOAD ─── */
+    .hero {
+      position: relative;
+      padding: 3rem 2.5rem 2rem;
+      overflow: hidden;
+    }
+    .hero::before {
+      content: 'BLACKWOOD';
+      position: absolute;
+      font-family: 'Bebas Neue', sans-serif;
+      font-size: clamp(80px, 16vw, 200px);
+      letter-spacing: 0.05em;
+      color: rgba(255,255,255,0.018);
+      bottom: -0.1em;
+      left: -0.02em;
+      pointer-events: none;
+      white-space: nowrap;
+      user-select: none;
+    }
+
+    .upload-zone {
+      position: relative;
+      border: 1px solid var(--border);
+      background: var(--dark);
+      padding: 3rem 2rem;
+      text-align: center;
+      cursor: pointer;
+      transition: border-color 0.3s, background 0.3s;
+      overflow: hidden;
+    }
+    .upload-zone::after {
+      content: '';
+      position: absolute;
+      top: 0; left: 0; right: 0;
+      height: 1px;
+      background: linear-gradient(90deg, transparent, var(--red), transparent);
+      opacity: 0;
+      transition: opacity 0.3s;
+    }
+    .upload-zone:hover::after, .upload-zone.drag-over::after { opacity: 1; }
+    .upload-zone:hover, .upload-zone.drag-over {
+      border-color: #333;
+      background: #111;
+    }
+
+    .upload-icon-wrap {
+      width: 52px; height: 52px;
+      border: 1px solid #2a2a2a;
+      display: flex; align-items: center; justify-content: center;
+      margin: 0 auto 1.2rem;
+      color: var(--red);
+      font-size: 1.4rem;
+    }
+    .upload-zone h2 {
+      font-family: 'Bebas Neue', sans-serif;
+      font-size: 1.6rem;
+      letter-spacing: 0.1em;
+      color: var(--text);
+      margin-bottom: 0.4rem;
+    }
+    .upload-zone p {
+      font-family: 'Barlow Condensed', sans-serif;
+      font-size: 0.85rem;
+      letter-spacing: 0.08em;
+      color: var(--muted);
+      text-transform: uppercase;
+    }
+    .upload-zone p strong { color: var(--gold); font-weight: 400; }
     #fileInput { display: none; }
-    .upload-progress { display: none; margin-top: 1rem; background: var(--surface); border-radius: 12px; padding: 1rem 1.5rem; border: 1px solid var(--border); }
+
+    /* progress */
+    .upload-progress {
+      display: none;
+      margin-top: 1px;
+      background: var(--dark);
+      border: 1px solid var(--border);
+      border-top: none;
+      padding: 0.9rem 1.5rem;
+    }
     .upload-progress.active { display: block; }
-    .progress-label { display: flex; justify-content: space-between; font-size: 0.85rem; margin-bottom: 0.5rem; color: var(--muted); }
-    .progress-label span:last-child { color: var(--accent); font-weight: 600; }
-    .progress-bar-bg { height: 6px; background: var(--border); border-radius: 99px; overflow: hidden; }
-    .progress-bar-fill { height: 100%; background: linear-gradient(90deg, var(--accent), var(--accent2)); border-radius: 99px; width: 0%; transition: width 0.2s ease; }
-    .library-section { padding: 1rem 2rem 4rem; }
-    .section-title { font-family: 'Bebas Neue', sans-serif; font-size: 1.1rem; letter-spacing: 2px; color: var(--muted); text-transform: uppercase; margin-bottom: 1.2rem; display: flex; align-items: center; gap: 0.8rem; }
-    .section-title::after { content: ''; flex: 1; height: 1px; background: var(--border); }
-    .empty-state { text-align: center; padding: 5rem 2rem; color: var(--muted); }
-    .empty-state .big-icon { font-size: 4rem; margin-bottom: 1rem; opacity: 0.3; }
-    .video-grid { display: grid; grid-template-columns: repeat(auto-fill, minmax(220px, 1fr)); gap: 1.2rem; }
-    .video-card { background: var(--card); border-radius: 12px; overflow: hidden; border: 1px solid var(--border); cursor: pointer; transition: all 0.25s ease; position: relative; }
-    .video-card:hover { border-color: var(--accent); transform: translateY(-4px); box-shadow: 0 12px 40px rgba(232,200,74,0.1); }
-    .video-thumb { position: relative; width: 100%; padding-top: 56.25%; background: #0d0d18; overflow: hidden; }
-    .video-thumb video { position: absolute; inset: 0; width: 100%; height: 100%; object-fit: cover; }
-    .thumb-overlay { position: absolute; inset: 0; background: rgba(0,0,0,0.35); display: flex; align-items: center; justify-content: center; opacity: 0; transition: opacity 0.2s; }
+    .prog-row { display: flex; justify-content: space-between; align-items: center; margin-bottom: 0.5rem; }
+    .prog-name {
+      font-family: 'Barlow Condensed', sans-serif;
+      font-size: 0.78rem;
+      letter-spacing: 0.1em;
+      text-transform: uppercase;
+      color: var(--muted);
+      overflow: hidden; text-overflow: ellipsis; white-space: nowrap; max-width: 60%;
+    }
+    .prog-pct {
+      font-family: 'Bebas Neue', sans-serif;
+      font-size: 1rem;
+      letter-spacing: 0.1em;
+      color: var(--red);
+    }
+    .prog-track { height: 2px; background: #1a1a1a; }
+    .prog-fill { height: 100%; background: var(--red); width: 0%; transition: width 0.2s; }
+
+    /* ─── DIVIDER ─── */
+    .divider {
+      display: flex; align-items: center; gap: 1rem;
+      padding: 2rem 2.5rem 1rem;
+    }
+    .divider-line { flex: 1; height: 1px; background: var(--border); }
+    .divider-label {
+      font-family: 'Barlow Condensed', sans-serif;
+      font-size: 0.65rem;
+      letter-spacing: 0.4em;
+      text-transform: uppercase;
+      color: var(--muted);
+    }
+
+    /* ─── GRID ─── */
+    .library { padding: 0 2.5rem 5rem; }
+
+    .empty-state {
+      text-align: center;
+      padding: 6rem 2rem;
+      border: 1px solid var(--border);
+    }
+    .empty-icon {
+      font-family: 'Bebas Neue', sans-serif;
+      font-size: 4rem;
+      letter-spacing: 0.1em;
+      color: #1a1a1a;
+      margin-bottom: 1rem;
+    }
+    .empty-state p {
+      font-family: 'Barlow Condensed', sans-serif;
+      font-size: 0.8rem;
+      letter-spacing: 0.25em;
+      text-transform: uppercase;
+      color: var(--muted);
+    }
+
+    .video-grid {
+      display: grid;
+      grid-template-columns: repeat(auto-fill, minmax(240px, 1fr));
+      gap: 1px;
+      background: var(--border);
+      border: 1px solid var(--border);
+    }
+
+    .video-card {
+      background: var(--dark);
+      cursor: pointer;
+      position: relative;
+      transition: background 0.2s;
+      overflow: hidden;
+    }
+    .video-card:hover { background: #111; }
+
+    .video-thumb {
+      position: relative;
+      width: 100%;
+      padding-top: 56.25%;
+      background: #0a0a0a;
+      overflow: hidden;
+    }
+    .video-thumb video {
+      position: absolute; inset: 0;
+      width: 100%; height: 100%;
+      object-fit: cover;
+      opacity: 0.85;
+      transition: opacity 0.3s, transform 0.5s;
+    }
+    .video-card:hover .video-thumb video { opacity: 1; transform: scale(1.03); }
+
+    .thumb-overlay {
+      position: absolute; inset: 0;
+      background: linear-gradient(to top, rgba(0,0,0,0.7) 0%, transparent 50%);
+      display: flex; align-items: center; justify-content: center;
+      opacity: 0; transition: opacity 0.2s;
+    }
     .video-card:hover .thumb-overlay { opacity: 1; }
-    .play-btn-overlay { width: 48px; height: 48px; background: var(--accent); border-radius: 50%; display: flex; align-items: center; justify-content: center; color: #000; font-size: 1.2rem; }
-    .video-info { padding: 0.8rem 1rem; }
-    .video-title { font-size: 0.9rem; font-weight: 600; white-space: nowrap; overflow: hidden; text-overflow: ellipsis; margin-bottom: 0.25rem; }
-    .video-meta { font-size: 0.75rem; color: var(--muted); }
-    .delete-btn { position: absolute; top: 8px; right: 8px; width: 28px; height: 28px; background: rgba(0,0,0,0.7); border: none; border-radius: 50%; color: #fff; cursor: pointer; display: none; align-items: center; justify-content: center; font-size: 0.7rem; z-index: 5; transition: background 0.2s; }
+
+    .play-circle {
+      width: 44px; height: 44px;
+      border: 1px solid rgba(255,255,255,0.6);
+      display: flex; align-items: center; justify-content: center;
+      color: #fff;
+      font-size: 0.9rem;
+      padding-left: 3px;
+    }
+
+    .video-info {
+      padding: 0.7rem 0.9rem 0.8rem;
+      border-top: 1px solid var(--border);
+    }
+    .video-title {
+      font-family: 'Barlow Condensed', sans-serif;
+      font-weight: 600;
+      font-size: 0.9rem;
+      letter-spacing: 0.06em;
+      text-transform: uppercase;
+      white-space: nowrap; overflow: hidden; text-overflow: ellipsis;
+      color: var(--text);
+      margin-bottom: 3px;
+    }
+    .video-meta {
+      font-size: 0.72rem;
+      color: var(--muted);
+      letter-spacing: 0.05em;
+    }
+
+    .delete-btn {
+      position: absolute; top: 8px; right: 8px;
+      width: 26px; height: 26px;
+      background: rgba(0,0,0,0.75);
+      border: 1px solid #333;
+      color: var(--muted);
+      cursor: pointer;
+      display: none; align-items: center; justify-content: center;
+      font-size: 0.65rem;
+      transition: background 0.2s, color 0.2s;
+    }
     .video-card:hover .delete-btn { display: flex; }
-    .delete-btn:hover { background: #e63946; }
-    .modal-backdrop { display: none; position: fixed; inset: 0; background: var(--overlay); z-index: 1000; align-items: center; justify-content: center; padding: 1rem; }
+    .delete-btn:hover { background: var(--red); color: #fff; border-color: var(--red); }
+
+    /* red corner accent */
+    .video-card::before {
+      content: '';
+      position: absolute;
+      top: 0; left: 0;
+      width: 0; height: 0;
+      border-style: solid;
+      border-width: 18px 18px 0 0;
+      border-color: var(--red) transparent transparent transparent;
+      opacity: 0;
+      transition: opacity 0.2s;
+      z-index: 2;
+    }
+    .video-card:hover::before { opacity: 1; }
+
+    /* ─── MODAL / PLAYER ─── */
+    .modal-backdrop {
+      display: none; position: fixed; inset: 0;
+      background: rgba(0,0,0,0.97);
+      z-index: 1000;
+      align-items: center; justify-content: center;
+      padding: 1rem;
+    }
     .modal-backdrop.open { display: flex; }
-    .player-container { width: 100%; max-width: 960px; background: #000; border-radius: 16px; overflow: hidden; position: relative; border: 1px solid var(--border); box-shadow: 0 40px 120px rgba(0,0,0,0.8); }
-    .player-close { position: absolute; top: 12px; right: 12px; z-index: 20; background: rgba(0,0,0,0.6); border: none; color: #fff; width: 36px; height: 36px; border-radius: 50%; cursor: pointer; font-size: 1rem; display: flex; align-items: center; justify-content: center; transition: background 0.2s; }
-    .player-close:hover { background: #e63946; }
-    .player-title { position: absolute; top: 12px; left: 12px; z-index: 20; font-family: 'Bebas Neue', sans-serif; font-size: 1.1rem; letter-spacing: 1px; color: #fff; text-shadow: 0 2px 8px rgba(0,0,0,0.8); max-width: calc(100% - 80px); white-space: nowrap; overflow: hidden; text-overflow: ellipsis; }
-    #mainVideo { width: 100%; display: block; max-height: 70vh; background: #000; }
-    .controls { background: linear-gradient(0deg, #000 0%, rgba(0,0,0,0.9) 100%); padding: 0.6rem 1rem 0.8rem; }
-    .progress-area { display: flex; align-items: center; gap: 0.6rem; margin-bottom: 0.6rem; }
-    .time-label { font-size: 0.78rem; color: var(--muted); white-space: nowrap; min-width: 42px; }
-    .seek-bar { flex: 1; -webkit-appearance: none; height: 4px; background: #333; border-radius: 99px; outline: none; cursor: pointer; }
-    .seek-bar:hover { height: 6px; }
-    .seek-bar::-webkit-slider-thumb { -webkit-appearance: none; width: 14px; height: 14px; border-radius: 50%; background: var(--accent); cursor: pointer; }
-    .controls-row { display: flex; align-items: center; gap: 0.5rem; }
-    .ctrl-btn { background: none; border: none; color: #fff; cursor: pointer; padding: 6px 8px; border-radius: 8px; font-size: 1rem; transition: background 0.15s; display: flex; align-items: center; }
-    .ctrl-btn:hover { background: rgba(255,255,255,0.1); }
-    .volume-group { display: flex; align-items: center; gap: 0.4rem; }
-    .vol-slider { -webkit-appearance: none; width: 80px; height: 4px; background: #333; border-radius: 99px; outline: none; cursor: pointer; }
-    .vol-slider::-webkit-slider-thumb { -webkit-appearance: none; width: 12px; height: 12px; border-radius: 50%; background: var(--accent); cursor: pointer; }
-    .spacer { flex: 1; }
-    .speed-select { background: rgba(255,255,255,0.08); border: 1px solid rgba(255,255,255,0.15); color: #fff; border-radius: 6px; padding: 3px 6px; font-size: 0.78rem; cursor: pointer; font-family: 'DM Sans', sans-serif; }
-    .speed-select option { background: #111; }
-    @media (max-width: 600px) {
-      header { padding: 0 1rem; }
-      .upload-section, .library-section { padding-left: 1rem; padding-right: 1rem; }
+
+    .player-wrap {
+      width: 100%; max-width: 980px;
+      background: var(--black);
+      border: 1px solid #222;
+      position: relative;
+      box-shadow: 0 0 80px rgba(192,57,43,0.08);
+    }
+
+    .player-topbar {
+      display: flex; align-items: center; justify-content: space-between;
+      padding: 0.6rem 1rem;
+      border-bottom: 1px solid var(--border);
+      background: var(--dark);
+    }
+    .player-topbar-title {
+      font-family: 'Barlow Condensed', sans-serif;
+      font-size: 0.75rem;
+      letter-spacing: 0.25em;
+      text-transform: uppercase;
+      color: var(--muted);
+    }
+    .player-topbar-title span { color: var(--gold); margin-right: 0.8rem; }
+    .close-btn {
+      background: none; border: 1px solid #2a2a2a;
+      color: var(--muted); cursor: pointer;
+      width: 28px; height: 28px;
+      display: flex; align-items: center; justify-content: center;
+      font-size: 0.7rem;
+      transition: border-color 0.2s, color 0.2s;
+    }
+    .close-btn:hover { border-color: var(--red); color: var(--red); }
+
+    #mainVideo { width: 100%; display: block; max-height: 72vh; background: #000; }
+
+    /* controls */
+    .controls {
+      background: var(--dark);
+      border-top: 1px solid var(--border);
+      padding: 0.5rem 1rem 0.7rem;
+    }
+    .progress-area { display: flex; align-items: center; gap: 0.6rem; margin-bottom: 0.5rem; }
+    .t { font-family: 'Bebas Neue', sans-serif; font-size: 0.85rem; letter-spacing: 0.05em; color: var(--muted); min-width: 38px; }
+    .seek-bar {
+      flex: 1; -webkit-appearance: none;
+      height: 2px; background: #2a2a2a;
+      outline: none; cursor: pointer;
+      transition: height 0.15s;
+    }
+    .seek-bar:hover { height: 4px; }
+    .seek-bar::-webkit-slider-thumb { -webkit-appearance: none; width: 12px; height: 12px; background: var(--red); cursor: pointer; border-radius: 0; }
+
+    .ctrl-row { display: flex; align-items: center; gap: 0.3rem; }
+    .cbtn {
+      background: none; border: none; color: var(--muted); cursor: pointer;
+      padding: 5px 7px; font-size: 0.9rem;
+      transition: color 0.15s;
+      display: flex; align-items: center;
+    }
+    .cbtn:hover { color: var(--text); }
+    .vol-wrap { display: flex; align-items: center; gap: 0.4rem; }
+    .vol-sl {
+      -webkit-appearance: none; width: 70px; height: 2px;
+      background: #2a2a2a; outline: none; cursor: pointer;
+    }
+    .vol-sl::-webkit-slider-thumb { -webkit-appearance: none; width: 10px; height: 10px; background: var(--gold); cursor: pointer; border-radius: 0; }
+    .sp {
+      background: none; border: 1px solid #252525; color: var(--muted);
+      padding: 3px 6px; font-size: 0.7rem; cursor: pointer;
+      font-family: 'Barlow Condensed', sans-serif; letter-spacing: 0.05em;
+    }
+    .sp option { background: #0f0f0f; }
+    .gap { flex: 1; }
+
+    /* fullscreen */
+    .player-wrap:fullscreen,
+    .player-wrap:-webkit-full-screen,
+    .player-wrap:-moz-full-screen {
+      max-width: 100vw !important; width: 100vw !important;
+      height: 100vh !important; display: flex !important;
+      flex-direction: column !important; border: none !important;
+    }
+    .player-wrap:fullscreen #mainVideo,
+    .player-wrap:-webkit-full-screen #mainVideo,
+    .player-wrap:-moz-full-screen #mainVideo {
+      flex: 1 !important; max-height: none !important;
+      height: 0 !important; width: 100% !important;
+      object-fit: contain !important;
+    }
+    .player-wrap:fullscreen .controls,
+    .player-wrap:-webkit-full-screen .controls,
+    .player-wrap:-moz-full-screen .controls { flex-shrink: 0 !important; }
+
+    @media (max-width: 640px) {
+      header, .hero, .divider, .library { padding-left: 1rem; padding-right: 1rem; }
       .video-grid { grid-template-columns: repeat(auto-fill, minmax(160px, 1fr)); }
-      .vol-slider { width: 60px; }
+      .vol-sl { width: 50px; }
     }
   </style>
 </head>
 <body>
-  <header>
-    <div class="logo">Cine<span>Vault</span></div>
-    <div class="video-count" id="videoCount">0 vídeos</div>
-  </header>
 
-  <div class="upload-section">
-    <div class="upload-zone" id="uploadZone">
-      <div style="font-size:2.5rem;margin-bottom:0.5rem">🎬</div>
-      <h2>Solte seus vídeos aqui</h2>
-      <p>ou <strong>clique para selecionar</strong> arquivos do seu computador</p>
-      <p style="margin-top:0.5rem;font-size:0.8rem;">Suporta MP4, MKV, AVI, MOV, WebM e mais</p>
-      <input type="file" id="fileInput" accept="video/*" multiple />
+<!-- HEADER -->
+<header>
+  <div class="logo">
+    <div class="logo-top">Visuals &amp; Cinema</div>
+    <div class="logo-main">CINE <span>BLACKWOOD</span></div>
+  </div>
+  <div class="header-right">
+    <div class="pill" id="videoCount"><span>0</span> VÍDEOS</div>
+  </div>
+</header>
+
+<!-- UPLOAD -->
+<div class="hero">
+  <div class="upload-zone" id="uploadZone">
+    <div class="upload-icon-wrap">▶</div>
+    <h2>Adicionar à Biblioteca</h2>
+    <p>Arraste ou <strong>clique para selecionar</strong> — MP4, MKV, MOV, WebM</p>
+    <input type="file" id="fileInput" accept="video/*" multiple />
+  </div>
+  <div class="upload-progress" id="uploadProgress">
+    <div class="prog-row">
+      <div class="prog-name" id="progName">Enviando...</div>
+      <div class="prog-pct" id="progPct">0%</div>
     </div>
-    <div class="upload-progress" id="uploadProgress">
-      <div class="progress-label">
-        <span id="progressName">Enviando...</span>
-        <span id="progressPct">0%</span>
+    <div class="prog-track"><div class="prog-fill" id="progFill"></div></div>
+  </div>
+</div>
+
+<!-- LIBRARY -->
+<div class="divider">
+  <div class="divider-line"></div>
+  <div class="divider-label">Biblioteca</div>
+  <div class="divider-line"></div>
+</div>
+
+<div class="library">
+  <div id="emptyState" class="empty-state">
+    <div class="empty-icon">— VAZIO —</div>
+    <p>Nenhum vídeo na biblioteca. Faça o upload acima.</p>
+  </div>
+  <div class="video-grid" id="videoGrid"></div>
+</div>
+
+<!-- PLAYER -->
+<div class="modal-backdrop" id="modal">
+  <div class="player-wrap" id="playerWrap">
+    <div class="player-topbar">
+      <div class="player-topbar-title"><span>▶</span><span id="playerTitle">—</span></div>
+      <button class="close-btn" id="closeBtn">✕</button>
+    </div>
+    <video id="mainVideo" preload="metadata"></video>
+    <div class="controls">
+      <div class="progress-area">
+        <span class="t" id="curT">0:00</span>
+        <input type="range" class="seek-bar" id="seekBar" value="0" min="0" step="0.1" />
+        <span class="t" id="durT">0:00</span>
       </div>
-      <div class="progress-bar-bg"><div class="progress-bar-fill" id="progressFill"></div></div>
-    </div>
-  </div>
-
-  <div class="library-section">
-    <div class="section-title">Biblioteca</div>
-    <div id="emptyState" class="empty-state">
-      <div class="big-icon">📂</div>
-      <p>Nenhum vídeo ainda. Faça o upload acima!</p>
-    </div>
-    <div class="video-grid" id="videoGrid"></div>
-  </div>
-
-  <div class="modal-backdrop" id="modalBackdrop">
-    <div class="player-container" id="playerContainer">
-      <div class="player-title" id="playerTitle"></div>
-      <button class="player-close" id="playerClose">✕</button>
-      <video id="mainVideo" preload="metadata"></video>
-      <div class="controls">
-        <div class="progress-area">
-          <span class="time-label" id="currentTime">0:00</span>
-          <input type="range" class="seek-bar" id="seekBar" value="0" min="0" step="0.1" />
-          <span class="time-label" id="duration">0:00</span>
+      <div class="ctrl-row">
+        <button class="cbtn" id="ppBtn">▶</button>
+        <button class="cbtn" id="rwBtn">⏪</button>
+        <button class="cbtn" id="ffBtn">⏩</button>
+        <div class="vol-wrap">
+          <button class="cbtn" id="muteBtn">🔊</button>
+          <input type="range" class="vol-sl" id="volSl" min="0" max="1" step="0.02" value="1" />
         </div>
-        <div class="controls-row">
-          <button class="ctrl-btn" id="playPauseBtn">▶</button>
-          <button class="ctrl-btn" id="rewind10">⏪</button>
-          <button class="ctrl-btn" id="forward10">⏩</button>
-          <div class="volume-group">
-            <button class="ctrl-btn" id="muteBtn">🔊</button>
-            <input type="range" class="vol-slider" id="volSlider" min="0" max="1" step="0.02" value="1" />
-          </div>
-          <div class="spacer"></div>
-          <select class="speed-select" id="speedSelect">
-            <option value="0.5">0.5×</option>
-            <option value="0.75">0.75×</option>
-            <option value="1" selected>1×</option>
-            <option value="1.25">1.25×</option>
-            <option value="1.5">1.5×</option>
-            <option value="2">2×</option>
-          </select>
-          <button class="ctrl-btn" id="fullscreenBtn">⛶</button>
-        </div>
+        <div class="gap"></div>
+        <select class="sp" id="speedSel">
+          <option value="0.5">0.5×</option>
+          <option value="0.75">0.75×</option>
+          <option value="1" selected>1×</option>
+          <option value="1.25">1.25×</option>
+          <option value="1.5">1.5×</option>
+          <option value="2">2×</option>
+        </select>
+        <button class="cbtn" id="fsBtn">⛶</button>
       </div>
     </div>
   </div>
+</div>
 
-  <script>
-    const $ = id => document.getElementById(id);
-    const uploadZone = $('uploadZone'), fileInput = $('fileInput'), videoGrid = $('videoGrid');
-    const emptyState = $('emptyState'), videoCount = $('videoCount');
-    const uploadProgress = $('uploadProgress'), progressFill = $('progressFill');
-    const progressName = $('progressName'), progressPct = $('progressPct');
-    const modal = $('modalBackdrop'), mainVideo = $('mainVideo');
-    const playerTitle = $('playerTitle'), seekBar = $('seekBar');
-    const currentTimeEl = $('currentTime'), durationEl = $('duration');
-    const volSlider = $('volSlider'), muteBtn = $('muteBtn');
-    const speedSelect = $('speedSelect'), fullscreenBtn = $('fullscreenBtn');
-    const playPauseBtn = $('playPauseBtn');
+<script>
+  const $ = id => document.getElementById(id);
+  const fmtSize = b => b>1073741824?(b/1073741824).toFixed(1)+' GB':b>1048576?(b/1048576).toFixed(1)+' MB':(b/1024).toFixed(0)+' KB';
+  const fmtTime = s => isNaN(s)?'0:00':Math.floor(s/60)+':'+Math.floor(s%60).toString().padStart(2,'0');
 
-    const fmtSize = b => b > 1073741824 ? (b/1073741824).toFixed(1)+' GB' : b > 1048576 ? (b/1048576).toFixed(1)+' MB' : (b/1024).toFixed(0)+' KB';
-    const fmtTime = s => isNaN(s) ? '0:00' : Math.floor(s/60)+':'+Math.floor(s%60).toString().padStart(2,'0');
+  const vid = $('mainVideo');
+  const modal = $('modal');
 
-    async function loadLibrary() {
-      const list = await fetch('/videos').then(r => r.json());
-      videoGrid.innerHTML = '';
-      videoCount.textContent = `${list.length} vídeo${list.length !== 1 ? 's' : ''}`;
-      emptyState.style.display = list.length === 0 ? 'block' : 'none';
-      list.forEach(v => {
-        const card = document.createElement('div');
-        card.className = 'video-card';
-        card.innerHTML = `
-          <div class="video-thumb">
-            <video src="${v.url}#t=3" muted preload="metadata"></video>
-            <div class="thumb-overlay"><div class="play-btn-overlay">▶</div></div>
-          </div>
-          <div class="video-info">
-            <div class="video-title">${v.name}</div>
-            <div class="video-meta">${fmtSize(v.size)}</div>
-          </div>
-          <button class="delete-btn" title="Remover">✕</button>`;
-        card.addEventListener('click', e => { if (!e.target.classList.contains('delete-btn')) openPlayer(v); });
-        card.querySelector('.delete-btn').addEventListener('click', async e => {
-          e.stopPropagation();
-          if (!confirm('Remover este vídeo?')) return;
-          await fetch('/video/' + v.id, { method: 'DELETE' });
-          loadLibrary();
-        });
-        videoGrid.appendChild(card);
+  // ── Library ──────────────────────────────────────────
+  async function loadLib() {
+    const list = await fetch('/videos').then(r=>r.json());
+    $('videoGrid').innerHTML = '';
+    const cnt = list.length;
+    $('videoCount').innerHTML = `<span>${cnt}</span> VÍDEO${cnt!==1?'S':''}`;
+    $('emptyState').style.display = cnt===0?'block':'none';
+    list.forEach(v => {
+      const c = document.createElement('div');
+      c.className = 'video-card';
+      c.innerHTML = `
+        <div class="video-thumb">
+          <video src="${v.url}#t=2" muted preload="metadata"></video>
+          <div class="thumb-overlay"><div class="play-circle">▶</div></div>
+        </div>
+        <div class="video-info">
+          <div class="video-title">${v.name}</div>
+          <div class="video-meta">${fmtSize(v.size)}</div>
+        </div>
+        <button class="delete-btn" title="Remover">✕</button>`;
+      c.addEventListener('click', e => { if(!e.target.classList.contains('delete-btn')) openPlayer(v); });
+      c.querySelector('.delete-btn').addEventListener('click', async e => {
+        e.stopPropagation();
+        if(!confirm('Remover este vídeo?')) return;
+        await fetch('/video/'+v.id,{method:'DELETE'});
+        loadLib();
       });
-    }
-
-    uploadZone.addEventListener('click', () => fileInput.click());
-    fileInput.addEventListener('change', e => handleFiles(e.target.files));
-    uploadZone.addEventListener('dragover', e => { e.preventDefault(); uploadZone.classList.add('drag-over'); });
-    uploadZone.addEventListener('dragleave', () => uploadZone.classList.remove('drag-over'));
-    uploadZone.addEventListener('drop', e => { e.preventDefault(); uploadZone.classList.remove('drag-over'); handleFiles(e.dataTransfer.files); });
-
-    async function handleFiles(files) {
-      for (const f of files) { if (f.type.startsWith('video/')) await uploadFile(f); }
-      loadLibrary();
-    }
-
-    function uploadFile(file) {
-      return new Promise((resolve, reject) => {
-        uploadProgress.classList.add('active');
-        progressName.textContent = file.name;
-        progressFill.style.width = '0%';
-        progressPct.textContent = '0%';
-        const xhr = new XMLHttpRequest();
-        xhr.open('POST', '/upload');
-        xhr.upload.onprogress = e => {
-          if (e.lengthComputable) {
-            const p = Math.round(e.loaded / e.total * 100);
-            progressFill.style.width = p + '%';
-            progressPct.textContent = p + '%';
-          }
-        };
-        xhr.onload = () => { uploadProgress.classList.remove('active'); fileInput.value = ''; resolve(); };
-        xhr.onerror = () => { uploadProgress.classList.remove('active'); reject(); };
-        const form = new FormData();
-        form.append('video', file);
-        xhr.send(form);
-      });
-    }
-
-    function openPlayer(v) { mainVideo.src = v.url; playerTitle.textContent = v.name; modal.classList.add('open'); mainVideo.play(); }
-    function closePlayer() { mainVideo.pause(); mainVideo.src = ''; modal.classList.remove('open'); }
-    $('playerClose').addEventListener('click', closePlayer);
-    modal.addEventListener('click', e => { if (e.target === modal) closePlayer(); });
-
-    document.addEventListener('keydown', e => {
-      if (!modal.classList.contains('open')) return;
-      if (e.code === 'Space') { e.preventDefault(); togglePlay(); }
-      if (e.code === 'Escape') closePlayer();
-      if (e.code === 'ArrowLeft') mainVideo.currentTime = Math.max(0, mainVideo.currentTime - 10);
-      if (e.code === 'ArrowRight') mainVideo.currentTime = Math.min(mainVideo.duration, mainVideo.currentTime + 10);
-      if (e.code === 'KeyF') toggleFullscreen();
-      if (e.code === 'KeyM') toggleMute();
+      $('videoGrid').appendChild(c);
     });
+  }
 
-    function togglePlay() { mainVideo.paused ? mainVideo.play() : mainVideo.pause(); }
-    mainVideo.addEventListener('play', () => playPauseBtn.textContent = '⏸');
-    mainVideo.addEventListener('pause', () => playPauseBtn.textContent = '▶');
-    playPauseBtn.addEventListener('click', togglePlay);
-    mainVideo.addEventListener('click', togglePlay);
-    mainVideo.addEventListener('timeupdate', () => { if (!mainVideo.duration) return; seekBar.value = mainVideo.currentTime / mainVideo.duration * 100; currentTimeEl.textContent = fmtTime(mainVideo.currentTime); });
-    mainVideo.addEventListener('loadedmetadata', () => { seekBar.max = 100; durationEl.textContent = fmtTime(mainVideo.duration); });
-    seekBar.addEventListener('input', () => { mainVideo.currentTime = seekBar.value / 100 * mainVideo.duration; });
-    volSlider.addEventListener('input', () => { mainVideo.volume = volSlider.value; mainVideo.muted = false; updateMuteIcon(); });
-    function toggleMute() { mainVideo.muted = !mainVideo.muted; updateMuteIcon(); }
-    function updateMuteIcon() { muteBtn.textContent = (mainVideo.muted || mainVideo.volume === 0) ? '🔇' : mainVideo.volume < 0.5 ? '🔉' : '🔊'; }
-    muteBtn.addEventListener('click', toggleMute);
-    speedSelect.addEventListener('change', () => { mainVideo.playbackRate = parseFloat(speedSelect.value); });
-    $('rewind10').addEventListener('click', () => mainVideo.currentTime = Math.max(0, mainVideo.currentTime - 10));
-    $('forward10').addEventListener('click', () => mainVideo.currentTime = Math.min(mainVideo.duration, mainVideo.currentTime + 10));
-    function toggleFullscreen() {
-      const el = $('playerContainer');
-      if (!document.fullscreenElement) { el.requestFullscreen(); fullscreenBtn.textContent = '⊡'; }
-      else { document.exitFullscreen(); fullscreenBtn.textContent = '⛶'; }
-    }
-    fullscreenBtn.addEventListener('click', toggleFullscreen);
-    document.addEventListener('fullscreenchange', () => { fullscreenBtn.textContent = document.fullscreenElement ? '⊡' : '⛶'; });
+  // ── Upload ───────────────────────────────────────────
+  const uz = $('uploadZone'), fi = $('fileInput');
+  uz.addEventListener('click', ()=>fi.click());
+  fi.addEventListener('change', e=>handleFiles(e.target.files));
+  uz.addEventListener('dragover', e=>{e.preventDefault();uz.classList.add('drag-over');});
+  uz.addEventListener('dragleave', ()=>uz.classList.remove('drag-over'));
+  uz.addEventListener('drop', e=>{e.preventDefault();uz.classList.remove('drag-over');handleFiles(e.dataTransfer.files);});
 
-    loadLibrary();
-  </script>
+  async function handleFiles(files) {
+    for(const f of files) { if(f.type.startsWith('video/')) await doUpload(f); }
+    loadLib();
+  }
+
+  function doUpload(file) {
+    return new Promise((res,rej)=>{
+      $('uploadProgress').classList.add('active');
+      $('progName').textContent = file.name;
+      $('progFill').style.width = '0%';
+      $('progPct').textContent = '0%';
+      const xhr = new XMLHttpRequest();
+      xhr.open('POST','/upload');
+      xhr.upload.onprogress = e=>{
+        if(e.lengthComputable){
+          const p=Math.round(e.loaded/e.total*100);
+          $('progFill').style.width=p+'%';
+          $('progPct').textContent=p+'%';
+        }
+      };
+      xhr.onload=()=>{$('uploadProgress').classList.remove('active');fi.value='';res();};
+      xhr.onerror=()=>{$('uploadProgress').classList.remove('active');rej();};
+      const fd=new FormData(); fd.append('video',file);
+      xhr.send(fd);
+    });
+  }
+
+  // ── Player ───────────────────────────────────────────
+  function openPlayer(v) { vid.src=v.url; $('playerTitle').textContent=v.name; modal.classList.add('open'); vid.play(); }
+  function closePlayer() { vid.pause(); vid.src=''; modal.classList.remove('open'); }
+  $('closeBtn').addEventListener('click', closePlayer);
+  modal.addEventListener('click', e=>{ if(e.target===modal) closePlayer(); });
+
+  document.addEventListener('keydown', e=>{
+    if(!modal.classList.contains('open')) return;
+    if(e.code==='Space'){e.preventDefault();togglePlay();}
+    if(e.code==='Escape') closePlayer();
+    if(e.code==='ArrowLeft') vid.currentTime=Math.max(0,vid.currentTime-10);
+    if(e.code==='ArrowRight') vid.currentTime=Math.min(vid.duration,vid.currentTime+10);
+    if(e.code==='KeyF') toggleFs();
+    if(e.code==='KeyM') toggleMute();
+  });
+
+  function togglePlay(){ vid.paused?vid.play():vid.pause(); }
+  vid.addEventListener('play', ()=>$('ppBtn').textContent='⏸');
+  vid.addEventListener('pause', ()=>$('ppBtn').textContent='▶');
+  $('ppBtn').addEventListener('click', togglePlay);
+  vid.addEventListener('click', togglePlay);
+
+  vid.addEventListener('timeupdate',()=>{ if(!vid.duration)return; $('seekBar').value=vid.currentTime/vid.duration*100; $('curT').textContent=fmtTime(vid.currentTime); });
+  vid.addEventListener('loadedmetadata',()=>{ $('seekBar').max=100; $('durT').textContent=fmtTime(vid.duration); });
+  $('seekBar').addEventListener('input',()=>{ vid.currentTime=$('seekBar').value/100*vid.duration; });
+
+  $('volSl').addEventListener('input',()=>{ vid.volume=$('volSl').value; vid.muted=false; updateVol(); });
+  function toggleMute(){ vid.muted=!vid.muted; updateVol(); }
+  function updateVol(){ $('muteBtn').textContent=(vid.muted||vid.volume===0)?'🔇':vid.volume<0.5?'🔉':'🔊'; }
+  $('muteBtn').addEventListener('click', toggleMute);
+
+  $('rwBtn').addEventListener('click',()=>vid.currentTime=Math.max(0,vid.currentTime-10));
+  $('ffBtn').addEventListener('click',()=>vid.currentTime=Math.min(vid.duration,vid.currentTime+10));
+  $('speedSel').addEventListener('change',()=>vid.playbackRate=parseFloat($('speedSel').value));
+
+  function toggleFs(){
+    const el=$('playerWrap');
+    const isFs=document.fullscreenElement||document.webkitFullscreenElement||document.mozFullScreenElement;
+    if(!isFs){ const r=el.requestFullscreen||el.webkitRequestFullscreen||el.mozRequestFullScreen; if(r)r.call(el); }
+    else { const x=document.exitFullscreen||document.webkitExitFullscreen||document.mozCancelFullScreen; if(x)x.call(document); }
+  }
+  $('fsBtn').addEventListener('click', toggleFs);
+  ['fullscreenchange','webkitfullscreenchange','mozfullscreenchange'].forEach(ev=>{
+    document.addEventListener(ev,()=>{ const isFs=document.fullscreenElement||document.webkitFullscreenElement||document.mozFullScreenElement; $('fsBtn').textContent=isFs?'⊡':'⛶'; });
+  });
+
+  loadLib();
+</script>
 </body>
 </html>
