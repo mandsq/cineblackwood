@@ -122,45 +122,32 @@ app.get('/watch/:code', (req, res) => {
   </style>
 </head>
 <body>
-  <video id="v" preload="auto" playsinline autoplay muted></video>
+  <video id="v" autoplay muted playsinline loop="false"></video>
   <script>
     const v = document.getElementById('v');
-    const code = '${req.params.code}';
     const startedAt = ${session.startedAt};
+    const filename = '${session.filename}';
 
     function getExpected() { return (Date.now() - startedAt) / 1000; }
 
-    // Tenta dar autoplay com muted (funciona em qualquer browser/CEF)
-    function tryAutoplay() {
-      v.muted = true;
-      v.play().catch(() => {});
-    }
+    v.src = '/stream/${req.params.code}';
 
-    v.addEventListener('loadedmetadata', () => {
-      const expected = getExpected();
-      if (expected < v.duration) v.currentTime = expected;
-      tryAutoplay();
+    v.addEventListener('loadedmetadata', function() {
+      const t = getExpected();
+      if (t > 0 && t < v.duration) v.currentTime = t;
+      v.muted = true;
+      v.play();
     });
 
-    // WebSocket para receber comandos do host
-    const proto = location.protocol === 'https:' ? 'wss' : 'ws';
-    const ws = new WebSocket(proto + '://' + location.host + '/ws/' + code + '?role=viewer');
-
-    ws.onmessage = (e) => {
-      const msg = JSON.parse(e.data);
-      if (msg.type === 'state') {
-        const drift = Math.abs(v.currentTime - msg.currentTime);
-        if (drift > 1.5) v.currentTime = msg.currentTime;
-        if (msg.playing && v.paused) { v.muted = true; v.play().catch(()=>{}); }
-        if (!msg.playing && !v.paused) v.pause();
-      }
-    };
-
-    ws.onclose = () => setTimeout(() => location.reload(), 3000);
-
-    v.src = '/stream/' + code;
-    v.load();
-    tryAutoplay();
+    // Resync leve a cada 5s
+    setInterval(function() {
+      if (!v.duration) return;
+      const expected = getExpected();
+      if (expected >= v.duration) return;
+      const drift = v.currentTime - expected;
+      if (Math.abs(drift) > 3) v.currentTime = expected;
+      if (v.paused) v.play();
+    }, 5000);
   </script>
 </body>
 </html>`);
