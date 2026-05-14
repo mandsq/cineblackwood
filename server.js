@@ -119,34 +119,74 @@ app.get('/watch/:code', (req, res) => {
     * { margin:0; padding:0; box-sizing:border-box; }
     html, body { background:#000; width:100%; height:100%; overflow:hidden; }
     video { width:100vw; height:100vh; object-fit:contain; display:block; }
+    #unmute {
+      display:none; position:fixed; bottom:20px; left:50%; transform:translateX(-50%);
+      background:#c0392b; border:none; color:#fff; padding:10px 28px;
+      font-family:sans-serif; font-size:0.85rem; letter-spacing:0.1em;
+      cursor:pointer; z-index:10;
+    }
   </style>
 </head>
 <body>
-  <video id="v" autoplay muted playsinline loop="false"></video>
+  <video id="v" playsinline></video>
+  <button id="unmute" onclick="unmute()">🔊 ATIVAR SOM</button>
   <script>
     const v = document.getElementById('v');
-    const startedAt = ${session.startedAt};
-    const filename = '${session.filename}';
+    const code = '${req.params.code}';
+    let started = false;
 
-    function getExpected() { return (Date.now() - startedAt) / 1000; }
+    function getExpected() { return (Date.now() - ${session.startedAt}) / 1000; }
 
-    v.src = '/stream/${req.params.code}';
+    function applyState(playing, currentTime) {
+      const drift = Math.abs(v.currentTime - currentTime);
+      if (drift > 1.5) v.currentTime = currentTime;
+      if (playing && v.paused) {
+        v.muted = true;
+        v.play().then(() => {
+          document.getElementById('unmute').style.display = 'block';
+        }).catch(() => {});
+      }
+      if (!playing && !v.paused) v.pause();
+    }
 
-    v.addEventListener('loadedmetadata', function() {
-      const t = getExpected();
-      if (t > 0 && t < v.duration) v.currentTime = t;
-      v.muted = true;
-      v.play();
-    });
+    function unmute() {
+      v.muted = false;
+      document.getElementById('unmute').style.display = 'none';
+    }
 
-    // Resync leve a cada 5s
-    setInterval(function() {
-      if (!v.duration) return;
-      const expected = getExpected();
-      if (expected >= v.duration) return;
-      const drift = v.currentTime - expected;
-      if (Math.abs(drift) > 3) v.currentTime = expected;
-      if (v.paused) v.play();
+    // WebSocket
+    const proto = location.protocol === 'https:' ? 'wss' : 'ws';
+    const ws = new WebSocket(proto + '://' + location.host + '/ws/' + code + '?role=viewer');
+
+    ws.onopen = () => {
+      // Pede estado atual assim que conectar
+      ws.send(JSON.stringify({ type: 'hello' }));
+    };
+
+    ws.onmessage = (e) => {
+      const msg = JSON.parse(e.data);
+      if (msg.type === 'state') {
+        if (!started) {
+          // Primeira vez: carrega o vídeo e aplica estado quando pronto
+          v.src = '/stream/' + code;
+          v.addEventListener('loadedmetadata', () => {
+            applyState(msg.playing, msg.currentTime);
+            started = true;
+          }, { once: true });
+          v.load();
+        } else {
+          applyState(msg.playing, msg.currentTime);
+        }
+      }
+    };
+
+    ws.onclose = () => setTimeout(() => location.reload(), 3000);
+
+    // Resync a cada 5s
+    setInterval(() => {
+      if (v.paused || !v.duration) return;
+      const drift = v.currentTime - getExpected();
+      if (Math.abs(drift) > 3) v.currentTime = getExpected();
     }, 5000);
   </script>
 </body>
@@ -271,11 +311,18 @@ wss.on('connection', (ws, req) => {
   if (role === 'viewer') {
     session.viewers.add(ws);
     // Envia estado atual imediatamente
-    const elapsed = (Date.now() - session.lastUpdate) / 1000;
-    const currentTime = session.playing ? session.currentTime + elapsed : session.currentTime;
+    const elapsed = session.playing ? (Date.now() - session.lastUpdate) / 1000 : 0;
+    const currentTime = session.currentTime + elapsed;
     ws.send(JSON.stringify({ type: 'state', playing: session.playing, currentTime }));
-    // Notifica o host do novo espectador
-    if (session.hostWs?.readyState === 1) session.hostWs.send(JSON.stringify({ type: 'viewers', count: session.viewers.size }));
+
+    ws.on('message', (raw) => {
+      const msg = JSON.parse(raw);
+      // Se pedir estado atual, reenvia
+      if (msg.type === 'hello') {
+        const el = session.playing ? (Date.now() - session.lastUpdate) / 1000 : 0;
+        ws.send(JSON.stringify({ type: 'state', playing: session.playing, currentTime: session.currentTime + el }));
+      }
+    });
     ws.on('close', () => {
       session.viewers.delete(ws);
       if (session.hostWs?.readyState === 1) session.hostWs.send(JSON.stringify({ type: 'viewers', count: session.viewers.size }));
