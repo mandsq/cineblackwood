@@ -119,57 +119,48 @@ app.get('/watch/:code', (req, res) => {
     * { margin:0; padding:0; box-sizing:border-box; }
     html, body { background:#000; width:100%; height:100%; overflow:hidden; }
     video { width:100vw; height:100vh; object-fit:contain; display:block; }
-    #overlay { position:fixed; inset:0; background:#000; display:flex; flex-direction:column; align-items:center; justify-content:center; gap:1rem; }
-    #status { color:#555; font-family:sans-serif; font-size:0.85rem; letter-spacing:0.15em; text-align:center; }
-    #playbtn { background:#c0392b; border:none; color:#fff; padding:14px 40px; font-size:1rem; cursor:pointer; letter-spacing:0.15em; font-family:sans-serif; display:none; }
   </style>
 </head>
 <body>
-  <video id="v" preload="auto" playsinline></video>
-  <div id="overlay">
-    <div id="status">AGUARDANDO O CINEMA INICIAR...</div>
-    <button id="playbtn" onclick="userReady()">▶ ENTRAR NA SESSÃO</button>
-  </div>
+  <video id="v" preload="auto" playsinline autoplay muted></video>
   <script>
     const v = document.getElementById('v');
-    const overlay = document.getElementById('overlay');
-    const status = document.getElementById('status');
-    const playbtn = document.getElementById('playbtn');
     const code = '${req.params.code}';
-    let ready = false;
-    let pendingState = null;
+    const startedAt = ${session.startedAt};
 
-    v.src = '/stream/' + code;
-    v.load();
+    function getExpected() { return (Date.now() - startedAt) / 1000; }
 
-    // Mostra botão após 2s para garantir interação do usuário (desbloqueio de autoplay)
-    setTimeout(() => { playbtn.style.display = 'block'; }, 2000);
-
-    function userReady() {
-      ready = true;
-      overlay.style.display = 'none';
-      if (pendingState) applyState(pendingState);
+    // Tenta dar autoplay com muted (funciona em qualquer browser/CEF)
+    function tryAutoplay() {
+      v.muted = true;
+      v.play().catch(() => {});
     }
 
-    function applyState(state) {
-      if (!ready) { pendingState = state; return; }
-      const drift = Math.abs(v.currentTime - state.currentTime);
-      if (drift > 1.5) v.currentTime = state.currentTime;
-      if (state.playing && v.paused) v.play().catch(()=>{});
-      if (!state.playing && !v.paused) v.pause();
-    }
+    v.addEventListener('loadedmetadata', () => {
+      const expected = getExpected();
+      if (expected < v.duration) v.currentTime = expected;
+      tryAutoplay();
+    });
 
-    // WebSocket
+    // WebSocket para receber comandos do host
     const proto = location.protocol === 'https:' ? 'wss' : 'ws';
     const ws = new WebSocket(proto + '://' + location.host + '/ws/' + code + '?role=viewer');
 
     ws.onmessage = (e) => {
       const msg = JSON.parse(e.data);
-      if (msg.type === 'state') applyState(msg);
-      if (msg.type === 'ping') ws.send(JSON.stringify({ type: 'pong' }));
+      if (msg.type === 'state') {
+        const drift = Math.abs(v.currentTime - msg.currentTime);
+        if (drift > 1.5) v.currentTime = msg.currentTime;
+        if (msg.playing && v.paused) { v.muted = true; v.play().catch(()=>{}); }
+        if (!msg.playing && !v.paused) v.pause();
+      }
     };
 
-    ws.onclose = () => { status.textContent = 'CONEXÃO PERDIDA. RECARREGUE A PÁGINA.'; overlay.style.display = 'flex'; };
+    ws.onclose = () => setTimeout(() => location.reload(), 3000);
+
+    v.src = '/stream/' + code;
+    v.load();
+    tryAutoplay();
   </script>
 </body>
 </html>`);
