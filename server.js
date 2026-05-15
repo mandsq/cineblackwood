@@ -153,10 +153,17 @@ function applyState(playing, currentTime) {
   const drift = Math.abs(v.currentTime - currentTime);
   if (drift > 1.5) v.currentTime = currentTime;
   if (playing && v.paused) {
-    v.muted = true;
-    v.play().then(() => {
+    const isFiveM = /FiveM|CitizenFX/i.test(navigator.userAgent);
+    if (isFiveM) {
+      // FiveM: autoplay com som funciona normalmente
+      v.muted = false;
+      v.play().catch(() => {});
+    } else {
+      // Navegador normal: precisa de muted para autoplay funcionar
+      v.muted = true;
+      v.play().catch(() => {});
       document.getElementById('unmuteBtn').style.display = 'block';
-    }).catch(() => {});
+    }
   }
   if (!playing && !v.paused) v.pause();
 }
