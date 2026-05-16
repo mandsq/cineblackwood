@@ -119,6 +119,88 @@ function broadcast(s) {
   s.viewers.forEach(v => { if (v.readyState === 1) v.send(msg); });
 }
 
+// ── Tela de Aguardando ─────────────────────────────────────────────────────
+app.get('/waiting', (req, res) => {
+  res.send(`<!DOCTYPE html>
+<html>
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width,initial-scale=1">
+<title>CINE BLACKWOOD</title>
+<style>
+@import url('https://fonts.googleapis.com/css2?family=Bebas+Neue&family=Barlow+Condensed:wght@300;400&display=swap');
+* { margin:0; padding:0; box-sizing:border-box; }
+html,body { background:#080808; width:100%; height:100%; overflow:hidden; display:flex; align-items:center; justify-content:center; }
+
+/* Grain */
+body::before {
+  content:''; position:fixed; inset:0; pointer-events:none; z-index:0;
+  background-image: url("data:image/svg+xml,%3Csvg viewBox='0 0 256 256' xmlns='http://www.w3.org/2000/svg'%3E%3Cfilter id='n'%3E%3CfeTurbulence type='fractalNoise' baseFrequency='0.9' numOctaves='4' stitchTiles='stitch'/%3E%3C/filter%3E%3Crect width='100%25' height='100%25' filter='url(%23n)' opacity='0.06'/%3E%3C/svg%3E");
+  opacity:0.4;
+}
+
+.wrap { position:relative; z-index:1; text-align:center; display:flex; flex-direction:column; align-items:center; gap:2.5rem; }
+
+/* Logo */
+.logo-top {
+  font-family:'Barlow Condensed',sans-serif;
+  font-weight:300; font-size:clamp(0.7rem,1.5vw,1rem);
+  letter-spacing:0.55em; color:#c0392b; text-transform:uppercase;
+  margin-bottom:0.3rem;
+}
+.logo-main {
+  font-family:'Bebas Neue',sans-serif;
+  font-size:clamp(3rem,10vw,7rem);
+  letter-spacing:0.1em; color:#e8e4dc; line-height:1;
+}
+.logo-main span { color:#b8965a; }
+
+/* Linha vermelha */
+.line {
+  width: clamp(60px,10vw,120px);
+  height:1px; background:#c0392b;
+  animation: expand 2s ease forwards;
+}
+@keyframes expand { from { width:0; opacity:0; } to { width:clamp(60px,10vw,120px); opacity:1; } }
+
+/* Texto aguardando */
+.waiting-text {
+  font-family:'Barlow Condensed',sans-serif;
+  font-size:clamp(0.8rem,2vw,1.1rem);
+  letter-spacing:0.4em; color:#555; text-transform:uppercase;
+  animation: pulse 2.5s ease-in-out infinite;
+}
+@keyframes pulse { 0%,100% { opacity:0.3; } 50% { opacity:1; } }
+
+/* Dots */
+.dots { display:inline-block; }
+.dots span { animation: blink 1.4s infinite; opacity:0; }
+.dots span:nth-child(2) { animation-delay:0.2s; }
+.dots span:nth-child(3) { animation-delay:0.4s; }
+@keyframes blink { 0%,80%,100% { opacity:0; } 40% { opacity:1; } }
+
+/* Scanlines */
+body::after {
+  content:''; position:fixed; inset:0; pointer-events:none; z-index:0;
+  background: repeating-linear-gradient(0deg, transparent, transparent 2px, rgba(0,0,0,0.03) 2px, rgba(0,0,0,0.03) 4px);
+}
+</style>
+</head>
+<body>
+<div class="wrap">
+  <div>
+    <div class="logo-top">Visuals &amp; Cinema</div>
+    <div class="logo-main">CINE <span>BLACKWOOD</span></div>
+  </div>
+  <div class="line"></div>
+  <div class="waiting-text">
+    Aguardando início<span class="dots"><span>.</span><span>.</span><span>.</span></span>
+  </div>
+</div>
+</body>
+</html>`);
+});
+
 // ── Página do espectador ───────────────────────────────────────────────────
 app.get('/watch/:code', (req, res) => {
   const s = sessions[req.params.code];

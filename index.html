@@ -494,6 +494,7 @@
     <div class="logo-main">CINE <span>BLACKWOOD</span></div>
   </div>
   <div class="header-right">
+    <button onclick="copyWaiting()" style="background:none;border:1px solid #2a2a2a;color:#666;font-family:'Barlow Condensed',sans-serif;font-size:0.72rem;letter-spacing:0.15em;text-transform:uppercase;padding:5px 14px;cursor:pointer;transition:all 0.2s;" onmouseover="this.style.borderColor='#c0392b';this.style.color='#c0392b'" onmouseout="this.style.borderColor='#2a2a2a';this.style.color='#666'">⏳ Tela de Espera</button>
     <div class="pill" id="videoCount"><span>0</span> VÍDEOS</div>
   </div>
 </header>
@@ -607,6 +608,7 @@
           <div class="video-meta">${fmtSize(v.size)}</div>
         </div>
         <button class="cinema-btn">▶ Transmitir no Cinema</button>
+        <button class="direct-btn">🔗 Copiar Link Direto</button>
         <button class="delete-btn" title="Remover">✕</button>`;
       c.addEventListener('click', e => { if(!e.target.classList.contains('delete-btn')) openPlayer(v); });
       c.querySelector('.delete-btn').addEventListener('click', async e => {
@@ -730,6 +732,18 @@
   });
 
   $('sessClose').addEventListener('click', () => $('sessionModal').classList.remove('open'));
+
+  function copyWaiting() {
+    const url = location.origin + '/waiting';
+    navigator.clipboard.writeText(url).then(() => {
+      const btn = document.querySelector('button[onclick="copyWaiting()"]');
+      const orig = btn.textContent;
+      btn.textContent = '✓ Copiado!';
+      btn.style.color = '#b8965a';
+      btn.style.borderColor = '#b8965a';
+      setTimeout(() => { btn.textContent = orig; btn.style.color = ''; btn.style.borderColor = ''; }, 2000);
+    });
+  }
 
   // ── Init ──────────────────────────────────────────────
   loadLib();
